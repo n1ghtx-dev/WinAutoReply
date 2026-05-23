@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 
 # ── Telegram API (официальный Desktop клиент) ─────────────────────────────────
-TG_API_ID   = 2496
-TG_API_HASH = "8da85b0d5bfe62527e5b244c209159c3"
+TG_API_ID   = None
+TG_API_HASH = None
 
 # ── Папка данных пользователя (Documents / Документы) ────────────────────────
 def _user_data_dir() -> str:
