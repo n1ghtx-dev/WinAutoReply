@@ -2,11 +2,11 @@ import sys, os, subprocess, threading, asyncio, json, time
 import tkinter as tk
 from tkinter import ttk
 
-                                                                                
+# ── Telegram API (официальный Desktop клиент) ─────────────────────────────────
 TG_API_ID   = 2496
 TG_API_HASH = "8da85b0d5bfe62527e5b244c209159c3"
 
-                                                                               
+# ── Папка данных пользователя (Documents / Документы) ────────────────────────
 def _user_data_dir() -> str:
     """Возвращает путь к папке Documents текущего пользователя."""
     if sys.platform == "win32":
@@ -15,7 +15,7 @@ def _user_data_dir() -> str:
         ctypes.windll.shell32.SHGetFolderPathW(0, 5, 0, 0, buf)
         base = buf.value or os.path.expanduser("~/Documents")
     else:
-                                                     
+        # Linux / macOS — ~/Документы или ~/Documents
         for candidate in ("Документы", "Documents"):
             p = os.path.join(os.path.expanduser("~"), candidate)
             if os.path.isdir(p):
@@ -31,7 +31,7 @@ DATA_DIR    = _user_data_dir()
 CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
 SESSION     = os.path.join(DATA_DIR, "session")
 
-                                                                                
+# ── Тёмная минималистичная палитра ────────────────────────────────────────────
 C = {
     "bg":      "#0D0D0D",
     "surface": "#161616",
@@ -48,7 +48,7 @@ C = {
 
 PACKAGES = [("telethon", "telethon")]
 
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
 def load_cfg():
     try:
         with open(CONFIG_FILE) as f:
@@ -78,9 +78,9 @@ def install_pkg(pip_name, cb=None):
     except Exception as e:
         if cb: cb(False, f"{pip_name} ✗ {e}")
 
-                                                                                
-                   
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  БАЗОВАЯ СТРАНИЦА
+# ══════════════════════════════════════════════════════════════════════════════
 class Page(tk.Frame):
     def __init__(self, master, app):
         super().__init__(master, bg=C["bg"])
@@ -94,7 +94,7 @@ class Page(tk.Frame):
     def _build(self):
         pass
 
-                                                                               
+    # ── Виджеты ──────────────────────────────────────────────────────────────
     def lbl(self, p, text, size=12, color=None, bold=False, **kw):
         return tk.Label(p, text=text, bg=kw.pop("bg", C["bg"]),
                         fg=color or C["text"],
@@ -131,9 +131,9 @@ class Page(tk.Frame):
                   relief="flat", font=("Segoe UI", 16),
                   cursor="hand2", bd=0).pack(anchor="w", pady=(0, 8))
 
-                                                                                
-                   
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  СПЛЭШ — 6 секунд
+# ══════════════════════════════════════════════════════════════════════════════
 class SplashPage(Page):
     def _build(self):
         c = tk.Frame(self, bg=C["bg"])
@@ -156,7 +156,7 @@ class SplashPage(Page):
         tk.Label(c, text=msg, font=("Segoe UI", 10),
                  bg=C["bg"], fg=C["sub"], justify="center").pack(pady=(0, 24))
 
-                  
+        # Прогресс
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("W.Horizontal.TProgressbar",
@@ -184,9 +184,9 @@ class SplashPage(Page):
         else:
             self.app.go("loader")
 
-                                                                                
-            
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  ЗАГРУЗЧИК
+# ══════════════════════════════════════════════════════════════════════════════
 class LoaderPage(Page):
     def _build(self):
         c = tk.Frame(self, bg=C["bg"])
@@ -199,7 +199,7 @@ class LoaderPage(Page):
                  font=("Segoe UI", 10),
                  bg=C["bg"], fg=C["sub"]).pack(pady=(0, 18))
 
-             
+        # Лог
         wrap = tk.Frame(c, bg=C["card"],
                         highlightthickness=1, highlightbackground=C["border"])
         wrap.pack(pady=(0, 14))
@@ -234,7 +234,7 @@ class LoaderPage(Page):
                                highlightbackground=C["border"],
                                pady=8, padx=20)
 
-                           
+        # Блок "нет Python"
         self._nopy = tk.Frame(c, bg=C["bg"])
         tk.Label(self._nopy, text="Python не найден",
                  font=("Segoe UI", 13, "bold"),
@@ -300,9 +300,9 @@ class LoaderPage(Page):
                 text="Ошибка. Запусти от администратора.", fg=C["err"]))
         self.after(0, lambda: self._cont.pack(pady=(14, 0)))
 
-                                                                                
-              
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  ВВОД НОМЕРА
+# ══════════════════════════════════════════════════════════════════════════════
 class PhonePage(Page):
     def _build(self):
         c = tk.Frame(self, bg=C["bg"])
@@ -313,7 +313,7 @@ class PhonePage(Page):
         tk.Label(c, text="Введи номер телефона",
                  font=("Segoe UI", 10), bg=C["bg"], fg=C["sub"]).pack(pady=(0, 24))
 
-              
+        # Поле
         wrap = tk.Frame(c, bg=C["card"],
                         highlightthickness=1, highlightbackground=C["border"])
         wrap.pack(fill="x", ipadx=24, ipady=20)
@@ -388,9 +388,9 @@ class PhonePage(Page):
                     state="normal", text="Получить код"))
         asyncio.run_coroutine_threadsafe(_do(), loop)
 
-                                                                                
-            
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  ВВОД КОДА
+# ══════════════════════════════════════════════════════════════════════════════
 class CodePage(Page):
     def _build(self):
         c = tk.Frame(self, bg=C["bg"])
@@ -467,9 +467,9 @@ class CodePage(Page):
                     state="normal", text="Подтвердить"))
         asyncio.run_coroutine_threadsafe(_do(), loop)
 
-                                                                                
-      
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  2FA
+# ══════════════════════════════════════════════════════════════════════════════
 class TwoFAPage(Page):
     def _build(self):
         c = tk.Frame(self, bg=C["bg"])
@@ -533,9 +533,9 @@ class TwoFAPage(Page):
                     state="normal", text="Войти"))
         asyncio.run_coroutine_threadsafe(_run(), self.app.loop)
 
-                                                                                
-                      
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  ПРОФИЛЬ + АВТООТВЕТ
+# ══════════════════════════════════════════════════════════════════════════════
 class ProfilePage(Page):
     def _build(self):
         self._running = False
@@ -543,7 +543,7 @@ class ProfilePage(Page):
         self._count = 0
         self._handler_set = False
 
-               
+        # Шапка
         bar = tk.Frame(self, bg=C["surface"], height=52)
         bar.pack(fill="x")
         bar.pack_propagate(False)
@@ -554,11 +554,11 @@ class ProfilePage(Page):
                              bg=C["surface"], fg=C["sub"])
         self._dot.pack(side="right", padx=20)
 
-                 
+        # Контент
         main = tk.Frame(self, bg=C["bg"])
         main.pack(fill="both", expand=True, padx=28, pady=20)
 
-                 
+        # Профиль
         prof = tk.Frame(main, bg=C["card"],
                         highlightthickness=1, highlightbackground=C["border"])
         prof.pack(fill="x", pady=(0, 20))
@@ -577,7 +577,7 @@ class ProfilePage(Page):
                                bg=C["card"], fg=C["sub"])
         self._uname.pack(anchor="w")
 
-                          
+        # Текст автоответа
         tk.Label(main, text="Текст автоответа",
                  font=("Segoe UI", 10), bg=C["bg"], fg=C["sub"]).pack(
                      anchor="w", pady=(0, 6))
@@ -597,7 +597,7 @@ class ProfilePage(Page):
         if cfg.get("reply"):
             self._txt.insert("1.0", cfg["reply"])
 
-                
+        # Кнопки
         row2 = tk.Frame(main, bg=C["bg"])
         row2.pack(fill="x", pady=(0, 12))
 
@@ -624,7 +624,7 @@ class ProfilePage(Page):
                              bg=C["bg"], fg=C["sub"])
         self._cnt.pack(anchor="w")
 
-                           
+        # Загружаем профиль
         threading.Thread(target=self._load_me, daemon=True).start()
 
     def _load_me(self):
@@ -691,7 +691,7 @@ class ProfilePage(Page):
                 except Exception:
                     pass
 
-                           
+        # Держим соединение
         while self.app.client and self.app.client.is_connected():
             await asyncio.sleep(20)
 
@@ -705,14 +705,14 @@ class ProfilePage(Page):
         asyncio.run_coroutine_threadsafe(_do(), self.app.loop)
         self.app.go("phone")
 
-                                                                                
-             
-                                                                                
+# ══════════════════════════════════════════════════════════════════════════════
+#  ПРИЛОЖЕНИЕ
+# ══════════════════════════════════════════════════════════════════════════════
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("AutoReply")
-        self.geometry("480x580")
+        self.title("WinAutoReply")
+        self.geometry("480x600")
         self.resizable(False, False)
         self.configure(bg=C["bg"])
 
@@ -752,8 +752,11 @@ class App(tk.Tk):
 
     def _quit(self):
         if self.client:
-            asyncio.run_coroutine_threadsafe(
-                self.client.disconnect(), self.loop)
+            try:
+                asyncio.run_coroutine_threadsafe(
+                    self.client.disconnect(), self.loop).result(timeout=2)
+            except Exception:
+                pass
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.destroy()
 
